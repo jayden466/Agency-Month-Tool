@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阿语大区运营分析平台</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0f14;--card:#1c2030;--border:rgba(255,255,255,0.07);--ac:#00e5a0;--ac2:#3b82f6;--ac3:#f59e0b;--ac4:#ec4899;--tx:#e8eaf0;--mu:#6b7280;--err:#ef4444;--ok:#10b981;--mo:'DM Mono',monospace;--sa:'Noto Sans SC',sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--sa);font-size:14px;min-height:100vh}
+.hdr{background:linear-gradient(135deg,#0d0f14,#151a2e);border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.logo{display:flex;align-items:center;gap:12px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ac);box-shadow:0 0 12px var(--ac);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.logo-t{font-size:17px;font-weight:700}.logo-s{font-size:11px;color:var(--mu);font-family:var(--mo)}
+.hbtns{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:12px;font-family:var(--sa);font-weight:500;transition:all .15s;background:rgba(255,255,255,.05);color:var(--tx)}
+.btn:hover{background:rgba(255,255,255,.1)} .btn svg{width:13px;height:13px}
+.wrap{max-width:1440px;margin:0 auto;padding:0 32px 60px}
+.tabs{display:flex;gap:2px;padding:20px 0 0;border-bottom:1px solid var(--border);margin-bottom:24px}
+.tab{padding:9px 18px;border:none;background:none;color:var(--mu);cursor:pointer;font-size:14px;font-family:var(--sa);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab.on{color:var(--ac);border-bottom-color:var(--ac)}.tab:hover:not(.on){color:var(--tx)}
+.panel{display:none}.panel.on{display:block;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Upload */
+.zone{border:1.5px dashed rgba(0,229,160,.25);border-radius:14px;padding:28px;text-align:center;cursor:pointer;background:rgba(0,229,160,.015);transition:all .2s;position:relative;margin-bottom:14px}
+.zone:hover,.zone.drag{border-color:var(--ac);background:rgba(0,229,160,.04)}
+.zone input{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:1}
+.zico{font-size:34px;margin-bottom:8px}.zttl{font-size:15px;font-weight:600;margin-bottom:5px}
+.zhi{color:var(--mu);font-size:12px;line-height:2}
+.flist{display:flex;flex-direction:column;gap:8px}
+.fitem{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 15px}
+.finfo{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.fico{width:34px;height:34px;border-radius:8px;background:rgba(0,229,160,.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.fname{font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fmeta{font-size:11px;color:var(--mu);font-family:var(--mo);margin-top:1px}
+.pbar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:5px;overflow:hidden;width:100%}
+.pfill{height:100%;border-radius:2px;background:var(--ac);transition:width .3s ease}
+.facs{display:flex;align-items:center;gap:7px;flex-shrink:0;margin-left:10px}
+.tag{display:inline-flex;align-items:center;gap:4px;border-radius:5px;padding:3px 8px;font-size:11px;font-weight:500;white-space:nowrap}
+.tok{background:rgba(16,185,129,.12);color:var(--ok)}.tproc{background:rgba(59,130,246,.12);color:var(--ac2)}.terr{background:rgba(239,68,68,.1);color:var(--err)}
+.xbtn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:rgba(239,68,68,.06);color:#ef4444;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;transition:all .15s}
+.xbtn:hover{background:rgba(239,68,68,.18)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid rgba(59,130,246,.25);border-top-color:var(--ac2);border-radius:50%;animation:spin .6s linear infinite}
+
+/* KPI */
+.kgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:22px}
+.kcard{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:16px 18px;position:relative;overflow:hidden}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:13px 13px 0 0}
+.kcard.g::before{background:var(--ac)}.kcard.b::before{background:var(--ac2)}.kcard.a::before{background:var(--ac3)}.kcard.p::before{background:var(--ac4)}
+.klbl{font-size:11px;color:var(--mu);margin-bottom:7px}
+.kval{font-size:24px;font-weight:700;font-family:var(--mo);line-height:1}
+.kval.g{color:var(--ac)}.kval.b{color:var(--ac2)}.kval.a{color:var(--ac3)}.kval.p{color:var(--ac4)}
+.ksub{font-size:11px;color:var(--mu);margin-top:5px}
+
+.stitle{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.stitle::before{content:'';width:3px;height:15px;border-radius:2px;background:var(--ac)}
+
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px}
+.cc.wide{grid-column:1/-1}
+.ctitle{font-size:11px;font-weight:600;color:var(--mu);margin-bottom:14px;letter-spacing:.4px;text-transform:uppercase}
+.cw{position:relative;height:210px}.cw.tall{height:290px}
+
+.ttbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.sbox{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 13px}
+.sbox input{background:none;border:none;color:var(--tx);font-size:13px;outline:none;font-family:var(--sa);width:190px}
+.sbox input::placeholder{color:var(--mu)}
+.twrap{overflow-x:auto;border-radius:11px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:rgba(255,255,255,.04);padding:10px 13px;text-align:left;font-size:11px;font-weight:600;color:var(--mu);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--tx)}.si{margin-left:3px;opacity:.4}.sorted .si{opacity:1;color:var(--ac)}
+tbody tr{border-top:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+tbody td{padding:9px 13px;white-space:nowrap}
+.rb{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--mo)}
+.r1{background:rgba(245,158,11,.18);color:var(--ac3)}.r2{background:rgba(156,163,175,.12);color:#9ca3af}.r3{background:rgba(205,127,50,.12);color:#cd7f32}.rn{background:rgba(255,255,255,.04);color:var(--mu)}
+.badge{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:500}
+.by{background:rgba(0,229,160,.1);color:var(--ac)}.bn{background:rgba(255,255,255,.03);color:var(--mu)}.bw{background:rgba(59,130,246,.12);color:var(--ac2)}
+.num{font-family:var(--mo)}.inc{color:var(--ac3);font-family:var(--mo);font-weight:500}
+
+.pag{display:flex;align-items:center;justify-content:space-between;padding:10px 0;color:var(--mu);font-size:13px}
+.pbtns{display:flex;gap:4px}
+.pb{width:30px;height:30px;border-radius:7px;border:1px solid var(--border);background:var(--card);color:var(--tx);cursor:pointer;font-size:13px;transition:all .1s;display:flex;align-items:center;justify-content:center}
+.pb:hover:not(:disabled){border-color:var(--ac);color:var(--ac)}.pb.on{background:var(--ac);border-color:var(--ac);color:#0d0f14;font-weight:600}.pb:disabled{opacity:.3;cursor:not-allowed}
+
+.mchips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.mc{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--mu);cursor:pointer;font-size:12px;font-family:var(--mo);transition:all .15s}
+.mc.on{border-color:var(--ac);color:var(--ac);background:rgba(0,229,160,.07)}
+
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:22px}
+.dcard{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px}
+.dcard-t{font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:11px}
+.dr{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.dr:last-child{border-bottom:none}.dl{color:var(--mu)}.dv{font-family:var(--mo);font-size:12px;font-weight:500}
+
+.tc{position:fixed;bottom:22px;right:22px;z-index:999;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:13px;display:flex;align-items:center;gap:7px;animation:tsi .2s ease;box-shadow:0 8px 28px rgba(0,0,0,.4)}
+@keyframes tsi{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.success{border-left:3px solid var(--ac)}.toast.error{border-left:3px solid var(--err)}.toast.info{border-left:3px solid var(--ac2)}
+.nodata{text-align:center;padding:60px 20px;color:var(--mu)}
+.nodata-ico{font-size:46px;margin-bottom:12px}.nodata-t{font-size:16px;font-weight:600;color:var(--tx);margin-bottom:5px}
+select{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--tx);font-size:12px;cursor:pointer;font-family:var(--sa);outline:none}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:3px}
+
+/* Insight cards */
+.insight-box{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:20px 24px;margin-bottom:22px}
+.insight-box-title{font-size:12px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.insight-box-title::before{content:'';width:3px;height:13px;border-radius:2px;background:var(--ac)}
+.insight-list{display:flex;flex-direction:column;gap:0}
+.insight-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);line-height:1.6}
+.insight-item:last-child{border-bottom:none;padding-bottom:0}
+.insight-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.insight-text{font-size:13px;color:var(--mu)}
+.insight-text strong{color:var(--tx);font-weight:500}
+.insight-text .hi{font-family:var(--mo);font-weight:500}
+.insight-tag{display:inline-flex;align-items:center;gap:3px;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:500;margin-left:4px}
+.it-up{background:rgba(0,229,160,.12);color:var(--ac)}.it-dn{background:rgba(239,68,68,.1);color:var(--err)}.it-flat{background:rgba(255,255,255,.06);color:var(--mu)}
+
+/* Share modal */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:center;justify-content:center;animation:fi .15s ease}
+.modal{background:#1c2030;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:520px;max-width:92vw;position:relative}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.modal-sub{font-size:13px;color:var(--mu);margin-bottom:20px;line-height:1.6}
+.modal-url{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mo);font-size:11px;color:var(--ac);word-break:break-all;margin-bottom:16px;max-height:80px;overflow-y:auto;line-height:1.7}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.modal-close{position:absolute;top:16px;right:18px;background:none;border:none;cursor:pointer;font-size:20px;color:var(--mu);line-height:1}
+.modal-close:hover{color:var(--tx)}
+.btn-green{background:var(--ac);color:#0d0f14;border-color:var(--ac)}
+.btn-green:hover{background:#00ffb3}
+
+/* Storage banner */
+.sbanner{display:flex;align-items:center;justify-content:space-between;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.18);border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:13px;gap:12px}
+.sbanner-text{color:var(--mu)}.sbanner-text strong{color:var(--tx);font-weight:500}
+.sbanner-acts{display:flex;gap:7px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">
+    <div class="dot"></div>
+    <div><div class="logo-t">阿语大区运营分析平台</div><div class="logo-s">Arabic Region · Guild Analytics v2</div></div>
+  </div>
+  <div class="hbtns">
+    <button class="btn" onclick="openSyncModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>云端同步</button>
+    <button class="btn" onclick="exportHTML()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>分享 HTML</button>
+    <button class="btn" onclick="exportExcel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>导出 Excel</button>
+    <button class="btn" onclick="exportPDF()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>导出 PDF</button>
+  </div>
+</div>
+
+<!-- 云端同步弹窗 -->
+<div id="syncModal" style="display:none">
+  <div class="modal-mask" onclick="if(event.target===this)closeSyncModal()">
+    <div class="modal" style="width:540px">
+      <button class="modal-close" onclick="closeSyncModal()">×</button>
+      <div class="modal-title">☁️ 云端同步</div>
+      <div class="modal-sub">数据保存到 GitHub 仓库（<code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px">jayden466/Agency-Month-Tool</code>），所有人刷新页面即可自动看到最新数据，无需任何操作。</div>
+
+      <div style="background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.15);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:12px;color:var(--mu);line-height:1.8">
+        <strong style="color:var(--tx)">使用流程：</strong><br>
+        上传者：配置 Token → 解析数据 → 点「推送到仓库」<br>
+        查看者：打开网页 / 刷新页面 → 自动加载最新数据 ✓
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;color:var(--mu);margin-bottom:6px;display:flex;justify-content:space-between">
+          <span>GitHub Token（需要 <code style="background:rgba(255,255,255,.08);padding:0 4px;border-radius:3px">contents: write</code> 权限）</span>
+          <a href="https://github.com/settings/tokens/new?scopes=repo&description=AnchorRewardTool" target="_blank" style="color:var(--ac2);font-size:11px;text-decoration:none">去生成 ↗</a>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input id="syncToken" type="password" placeholder="ghp_xxxxxxxxxxxx" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--mo);outline:none">
+          <button class="btn" onclick="saveSyncToken()">保存</button>
+        </div>
+        <div id="syncTokenStatus" style="font-size:11px;margin-top:4px;color:var(--mu)"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn btn-green" style="flex:1;justify-content:center;padding:10px" onclick="pushToRepo()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          推送当前数据到仓库
+        </button>
+        <button class="btn" style="flex:1;justify-content:center;padding:10px" onclick="pullFromRepo(true)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="8 8 12 12 16 8"/><line x1="12" y1="12" x2="12" y2="3"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          从仓库拉取最新数据
+        </button>
+      </div>
+      <div id="syncStatus" style="font-size:12px;color:var(--mu);text-align:center;min-height:18px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab on" onclick="sw('upload')">📤 数据上传</button>
+    <button class="tab" onclick="sw('platform')">📊 平台分月汇总</button>
+    <button class="tab" onclick="sw('guild')">🏛 各公会明细</button>
+    <button class="tab" onclick="sw('trend')">📈 趋势分析</button>
+  </div>
+
+  <div class="panel on" id="p-upload">
+    <div class="sbanner" id="storageBanner" style="display:none">
+      <div class="sbanner-text"><strong id="storageInfo"></strong> — 数据已保存在本地，刷新页面后自动恢复</div>
+      <div class="sbanner-acts">
+        <button class="btn" style="font-size:11px;padding:5px 10px" onclick="clearStorage()">清除缓存</button>
+      </div>
+    </div>
+    <p style="color:var(--mu);margin-bottom:14px;font-size:13px">支持 <strong style="color:var(--tx)">.xlsx</strong> 和 <strong style="color:var(--tx)">.csv</strong>，大文件（50MB+）采用<strong style="color:var(--tx)">分块异步处理</strong>，每批 5000 行交还主线程，页面全程保持响应。计算结果自动保存到本地，刷新不丢失，支持链接分享。</p>
+    <div class="zone" id="zone" ondragover="dov(event)" ondrop="dop(event)" ondragleave="dol()">
+      <input type="file" id="fi" accept=".xlsx,.csv" multiple onchange="sel(event)">
+      <div class="zico">📂</div>
+      <div class="zttl">拖拽或点击上传主播明细</div>
+      <div class="zhi">支持格式：Excel (.xlsx) · CSV (.csv，UTF-8)<br>大文件友好（50MB+）· 分块异步解析，UI 不阻塞<br>必需字段：所属周期 / 上麦总时长 / 语音房有效天 / 任务完成总次数 / 首次入会时间 / 总流水 / 公会ID / 公会名称</div>
+    </div>
+    <div class="flist" id="flist"></div>
+    <div style="margin-top:26px">
+      <div class="stitle">指标定义</div>
+      <div class="dgrid">
+        <div class="dcard"><div class="dcard-t">主播层指标</div>
+          <div class="dr"><span class="dl">月上麦主播数</span><span class="dv" style="color:var(--ac)">上麦时长 &gt; 0</span></div>
+          <div class="dr"><span class="dl">月有效上麦</span><span class="dv" style="color:var(--ac)">语音房有效天 &gt; 0</span></div>
+          <div class="dr"><span class="dl">月有效主播</span><span class="dv" style="color:var(--ac)">有效天&gt;0 且 任务≥1</span></div>
+          <div class="dr"><span class="dl">月新增有效</span><span class="dv" style="color:var(--ac2)">首次入会=当月+有效</span></div>
+        </div>
+        <div class="dcard"><div class="dcard-t">收入层指标</div>
+          <div class="dr"><span class="dl">月收礼主播数</span><span class="dv" style="color:var(--ac3)">总流水 &gt; 0</span></div>
+          <div class="dr"><span class="dl">月达档主播数</span><span class="dv" style="color:var(--ac3)">总流水 ≥ 2,500 金币</span></div>
+          <div class="dr"><span class="dl">月腰部主播数</span><span class="dv" style="color:var(--ac3)">总流水 ≥ 60,000 金币</span></div>
+          <div class="dr"><span class="dl">总收入预估</span><span class="dv" style="color:var(--ac3)">总流水 × 5 ÷ 1440（$）</span></div>
+        </div>
+        <div class="dcard"><div class="dcard-t">公会层指标</div>
+          <div class="dr"><span class="dl">月有效公会</span><span class="dv" style="color:var(--ac4)">达档主播数 ≥ 10 人</span></div>
+          <div class="dr"><span class="dl">月有效腰部公会</span><span class="dv" style="color:var(--ac4)">腰部主播数 ≥ 5 人</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="p-platform"><div class="nodata"><div class="nodata-ico">📊</div><div class="nodata-t">请先上传数据</div></div></div>
+  <div class="panel" id="p-guild"><div class="nodata"><div class="nodata-ico">🏛</div><div class="nodata-t">请先上传数据</div></div></div>
+  <div class="panel" id="p-trend"><div class="nodata"><div class="nodata-ico">📈</div><div class="nodata-t">上传数据后查看趋势</div></div></div>
+</div>
+<div class="tc" id="tc"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════
+const S={months:{},items:{},sortCol:'月达档主播数',sortAsc:false,search:'',page:1,ps:20,ym:null,charts:{}};
+const TABS=['upload','platform','guild','trend'];
+
+// ═══════════════════════════════════════════════════
+//  Tab
+// ═══════════════════════════════════════════════════
+function sw(id){
+  TABS.forEach((t,i)=>{document.querySelectorAll('.tab')[i].classList.toggle('on',t===id);document.getElementById('p-'+t).classList.toggle('on',t===id);});
+  if(id==='platform')renderPlat();if(id==='guild')renderGuild();if(id==='trend')renderTrend();
+}
+
+// ═══════════════════════════════════════════════════
+//  Parsing helpers (main thread, chunked async)
+// ═══════════════════════════════════════════════════
+function parseDur(s){
+  if(!s)return 0;const m=String(s).match(/(\d+)h\s*(\d+)m/);return m?+m[1]*60+ +m[2]:0;
+}
+// Excel 日期在 raw 模式下会是序列号（如 46113 = 2026-04-01）。
+// 统一使用 UTC，避免时区导致日期/月度跨界。
+function ymFromDate(d){
+  if(!(d instanceof Date)||isNaN(d.getTime()))return null;
+  const y=d.getUTCFullYear(),m=d.getUTCMonth()+1;
+  return y>=1900&&y<=2200?`${y}-${String(m).padStart(2,'0')}`:null;
+}
+function ymFromExcelSerial(v){
+  const n=Number(v);
+  if(!Number.isFinite(n)||n<=0||n>110000)return null;
+  return ymFromDate(new Date(Date.UTC(1899,11,30)+Math.floor(n)*86400000));
+}
+function extractYM(raw){
+  if(raw===null||raw===undefined||raw==='')return null;
+  if(raw instanceof Date)return ymFromDate(raw);
+  if(typeof raw==='number')return ymFromExcelSerial(raw);
+  const s=String(raw).trim();
+  if(/^\d+(?:\.\d+)?$/.test(s))return ymFromExcelSerial(s);
+  const m=s.match(/(\d{4})\s*(?:年|[-/.])\s*(\d{1,2})/);
+  if(m){const month=+m[2];return month>=1&&month<=12?`${m[1]}-${String(month).padStart(2,'0')}`:null;}
+  return null;
+}
+function parseFYM(v){
+  const ym=extractYM(v);
+  return ym?[+ym.slice(0,4),+ym.slice(5,7)]:[0,0];
+}
+
+// Zero-regex CSV parser
+function parseCSV(text){
+  const rows=[],len=text.length;let pos=0,headers=null;
+  while(pos<len){
+    const cols=[];
+    while(pos<len){
+      let val='';
+      if(text[pos]==='"'){pos++;while(pos<len){if(text[pos]==='"'){pos++;if(text[pos]==='"'){val+='"';pos++;}else break;}else val+=text[pos++];}while(pos<len&&text[pos]!==','&&text[pos]!=='\n'&&text[pos]!=='\r')pos++;}
+      else{while(pos<len&&text[pos]!==','&&text[pos]!=='\n'&&text[pos]!=='\r')val+=text[pos++];}
+      cols.push(val.trim());
+      if(pos<len&&text[pos]===','){pos++;continue;}break;
+    }
+    if(pos<len&&text[pos]==='\r')pos++;if(pos<len&&text[pos]==='\n')pos++;
+    if(!headers){headers=cols;continue;}if(cols.length===1&&cols[0]==='')continue;
+    const obj=Object.create(null);for(let i=0;i<headers.length;i++)obj[headers[i]]=cols[i]||'';rows.push(obj);
+  }
+  return rows;
+}
+
+// XLSX parse: dense + raw for speed
+function parseXLSX(ab){
+  const wb=XLSX.read(ab,{type:'array',cellDates:false,dense:true,raw:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const arr=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+  if(arr.length<2)return[];
+  const hdr=arr[0].map(h=>String(h).trim());const rows=[];
+  for(let i=1;i<arr.length;i++){const r=arr[i];if(!r||!r.length)continue;const o=Object.create(null);for(let j=0;j<hdr.length;j++)o[hdr[j]]=r[j]??'';rows.push(o);}
+  return rows;
+}
+
+// Chunked aggregation — yields to main thread every CHUNK rows
+const CHUNK=5000;
+// extractYM 定义在解析工具区，兼容 Excel 日期序列号与常见文本日期格式。
+
+// 单个月份的聚合结果生成
+function buildMonthResult(ymStr,plat,gmap){
+  const guilds=Object.entries(gmap).map(([gid,g])=>({
+    gid,gname:g.gn,月上麦主播数:g.上麦,月有效上麦主播数:g.有效上麦,月有效主播数:g.有效,
+    月新增有效主播数:g.新增,月收礼主播数:g.收礼,月达档主播数:g.达档,月腰部主播数:g.腰部,
+    总流水:g.流水,收入预估:Math.round(g.inc*100)/100,
+    是否有效公会:g.达档>=10,是否有效腰部公会:g.腰部>=5,
+  })).sort((a,b)=>b.月达档主播数-a.月达档主播数).map((g,i)=>({排名:i+1,...g}));
+  const 有效公会=guilds.filter(g=>g.是否有效公会).length;
+  const 腰部公会=guilds.filter(g=>g.是否有效腰部公会).length;
+  const 总收入=Math.round(guilds.reduce((s,g)=>s+g.收入预估,0)*100)/100;
+  const[y,m]=[+ymStr.slice(0,4),+ymStr.slice(5,7)];
+  return{plat:{ym:ymStr,label:y+'年'+m+'月',...plat,月有效公会数:有效公会,月有效腰部公会数:腰部公会,总收入预估:总收入},guilds};
+}
+
+// 多月分块聚合：先按月分组，再逐行处理，每 CHUNK 行 yield 一次
+function aggChunked(rows,onProgress,onDone){
+  // 第一步：扫描所有出现的月份（快速，不 yield）
+  const ymSet=new Set();
+  for(let i=0;i<rows.length;i++){
+    const ym=extractYM(rows[i]['所属周期']);
+    if(ym)ymSet.add(ym);
+  }
+  const ymList=[...ymSet].sort();
+  if(!ymList.length){onDone({});return;}
+
+  // 为每个月份初始化 plat 计数器和 gmap
+  const platMap=Object.create(null); // ym -> {上麦,有效上麦,...}
+  const gmapMap=Object.create(null); // ym -> gmap
+  ymList.forEach(ym=>{
+    platMap[ym]={上麦:0,有效上麦:0,有效:0,新增:0,收礼:0,达档:0,腰部:0};
+    gmapMap[ym]=Object.create(null);
+  });
+
+  let i=0;
+  function step(){
+    const end=Math.min(i+CHUNK,rows.length);
+    for(;i<end;i++){
+      const r=rows[i];
+      const ym=extractYM(r['所属周期']);
+      if(!ym||!platMap[ym])continue;
+
+      const yr=+ym.slice(0,4),mo=+ym.slice(5,7);
+      const dur=parseDur(r['上麦总时长']),ed=+r['语音房有效天']||0,tk=+r['任务完成总次数']||0,rev=+r['总流水']||0;
+      const[fy,fm]=parseFYM(r['首次入会时间']);
+      const gid=String(r['公会ID']||''),gn=String(r['公会名称']||'').trim();
+      const i上麦=dur>0,i有效上麦=ed>0,i有效=ed>0&&tk>0,i新增=fy===yr&&fm===mo&&i有效;
+      const i收礼=rev>0,i达档=rev>=2500,i腰部=rev>=60000;
+
+      const p=platMap[ym];
+      if(i上麦)p.上麦++;if(i有效上麦)p.有效上麦++;if(i有效)p.有效++;if(i新增)p.新增++;
+      if(i收礼)p.收礼++;if(i达档)p.达档++;if(i腰部)p.腰部++;
+
+      const gmap=gmapMap[ym];
+      let g=gmap[gid];if(!g)g=gmap[gid]={gn,上麦:0,有效上麦:0,有效:0,新增:0,收礼:0,达档:0,腰部:0,流水:0,inc:0};
+      if(i上麦)g.上麦++;if(i有效上麦)g.有效上麦++;if(i有效)g.有效++;if(i新增)g.新增++;
+      if(i收礼)g.收礼++;if(i达档)g.达档++;if(i腰部)g.腰部++;
+      g.流水+=rev;g.inc+=rev*5/1440;
+    }
+    onProgress(Math.round(i/rows.length*100));
+    if(i<rows.length){setTimeout(step,0);return;}
+
+    // 汇总所有月份的结果
+    const results=Object.create(null);
+    ymList.forEach(ym=>{
+      const p=platMap[ym];
+      const plat={月上麦主播数:p.上麦,月有效上麦主播数:p.有效上麦,月有效主播数:p.有效,月新增有效主播数:p.新增,月收礼主播数:p.收礼,月达档主播数:p.达档,月腰部主播数:p.腰部};
+      results[ym]=buildMonthResult(ym,plat,gmapMap[ym]);
+    });
+    onDone(results);
+  }
+  setTimeout(step,0);
+}
+
+// ═══════════════════════════════════════════════════
+//  Upload flow
+// ═══════════════════════════════════════════════════
+function dov(e){e.preventDefault();document.getElementById('zone').classList.add('drag');}
+function dol(){document.getElementById('zone').classList.remove('drag');}
+function dop(e){e.preventDefault();dol();pFiles([...e.dataTransfer.files]);}
+function sel(e){pFiles([...e.target.files]);e.target.value='';}
+function pFiles(files){
+  files.forEach(f=>{
+    if(f.name.match(/\.(xlsx|csv)$/i))pOne(f);
+    else toast(`不支持的格式：${f.name}，请上传 .xlsx 或 .csv`,'error');
+  });
+}
+
+function pOne(file){
+  const id=Date.now()+'_'+Math.random().toString(36).slice(2);
+  const ext=file.name.split('.').pop().toLowerCase();
+  S.items[id]={name:file.name,status:'reading',pct:0,ext};rFL();
+
+  const reader=new FileReader();
+  reader.onprogress=e=>{if(e.lengthComputable){S.items[id].pct=Math.round(e.loaded/e.total*30);rFL();}};
+  reader.onload=e=>{
+    S.items[id].status='parsing';S.items[id].pct=30;rFL();
+    // Parse in next tick to let UI update first
+    setTimeout(()=>{
+      let rows;
+      try{
+        if(ext==='csv'){rows=parseCSV(new TextDecoder('utf-8').decode(e.target.result));}
+        else{rows=parseXLSX(e.target.result);}
+      }catch(err){S.items[id]={name:file.name,status:'error',err:err.message};rFL();toast('解析失败：'+err.message,'error');return;}
+      if(!rows.length){S.items[id]={name:file.name,status:'error',err:'文件无数据行'};rFL();return;}
+      // 快速扫描月份列表，用于显示
+      const ymCheck=extractYM(rows[0]['所属周期']);
+      if(!ymCheck){S.items[id]={name:file.name,status:'error',err:'无法识别所属周期字段'};rFL();toast('无法识别所属周期，格式应为 YYYY-MM-...','error');return;}
+      S.items[id].pct=35;S.items[id].total=rows.length;rFL();
+      aggChunked(rows,
+        pct=>{S.items[id].pct=35+Math.round(pct*0.65);rFL();},
+        results=>{
+          const yms=Object.keys(results).sort();
+          if(!yms.length){S.items[id]={name:file.name,status:'error',err:'未找到有效月份数据'};rFL();return;}
+          // 将每个月份写入 S.months
+          yms.forEach(ym=>{
+            S.months[ym]={...results[ym],fileName:file.name};
+          });
+          S.ym=yms[yms.length-1];
+          const totalRows=rows.length;
+          S.items[id]={name:file.name,status:'done',yms,rowCount:totalRows,ext};
+          rFL();
+          toast(`解析完成 · ${totalRows.toLocaleString()} 行 · 共 ${yms.length} 个月份：${yms.join('、')}`, 'success');
+          saveToStorage();
+          updateStorageBanner();
+        }
+      );
+    },0);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function delM(itemId){
+  const it=S.items[itemId];
+  if(!it)return;
+  // 删除该文件关联的所有月份
+  const yms=it.yms||[it.ym].filter(Boolean);
+  yms.forEach(ym=>delete S.months[ym]);
+  delete S.items[itemId];
+  const ks=Object.keys(S.months).sort();S.ym=ks.length?ks[ks.length-1]:null;
+  rFL();toast(`已删除 ${yms.join('、')}，可重新上传`,'info');
+  saveToStorage();updateStorageBanner();
+}
+
+function rFL(){
+  const el=document.getElementById('flist'),entries=Object.entries(S.items);
+  if(!entries.length){el.innerHTML='';return;}
+  el.innerHTML=entries.map(([id,it])=>{
+    const ico=it.name.endsWith('.csv')?'📄':'📊';
+    if(it.status==='done'){
+      const yms=it.yms||[it.ym].filter(Boolean);
+      const totalGuilds=yms.reduce((s,ym)=>s+(S.months[ym]?.guilds?.length||0),0);
+      const sub=`${it.rowCount!=null?it.rowCount.toLocaleString()+' 行 · ':''}${yms.length} 个月份（${yms.join('、')}）· ${totalGuilds} 公会×月`;
+      return`<div class="fitem"><div class="finfo"><div class="fico">${ico}</div><div style="min-width:0"><div class="fname">${it.name}</div><div class="fmeta">${sub}</div></div></div><div class="facs"><span class="tag tok">✓ ${yms.length}个月</span><button class="xbtn" onclick="delM('${id}')" title="删除重传">×</button></div></div>`;
+    }
+    if(it.status==='error')return`<div class="fitem"><div class="finfo"><div class="fico">${ico}</div><div><div class="fname">${it.name}</div><div class="fmeta" style="color:var(--err)">${it.err}</div></div></div><div class="facs"><span class="tag terr">✕ 失败</span></div></div>`;
+    const lbl=it.status==='reading'?'读取中':'分块解析中';
+    return`<div class="fitem"><div class="finfo"><div class="fico">${ico}</div><div style="min-width:0;flex:1"><div class="fname">${it.name}</div><div class="fmeta">${lbl}… ${it.pct||0}%${it.total?' · '+it.total.toLocaleString()+' 行':''}</div><div class="pbar"><div class="pfill" style="width:${it.pct||0}%"></div></div></div></div><div class="facs"><span class="tag tproc"><span class="spin"></span>${lbl}</span></div></div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  Platform Tab
+// ═══════════════════════════════════════════════════
+function renderPlat(){
+  const el=document.getElementById('p-platform'),ms=Object.keys(S.months).sort();
+  if(!ms.length){el.innerHTML=ND('📊','请先上传数据');return;}
+  const lp=S.months[ms[ms.length-1]].plat;
+  el.innerHTML=`
+    <div id="platInsights"></div>
+    <div class="stitle">最新月份概览 · ${lp.label}</div>
+    <div class="kgrid">
+      <div class="kcard g"><div class="klbl">月上麦主播数</div><div class="kval g">${N(lp.月上麦主播数)}</div><div class="ksub">有效上麦 ${N(lp.月有效上麦主播数)} 人</div></div>
+      <div class="kcard g"><div class="klbl">月有效主播数</div><div class="kval g">${N(lp.月有效主播数)}</div><div class="ksub">新增 ${N(lp.月新增有效主播数)} 人</div></div>
+      <div class="kcard a"><div class="klbl">月达档主播数</div><div class="kval a">${N(lp.月达档主播数)}</div><div class="ksub">腰部 ${N(lp.月腰部主播数)} 人</div></div>
+      <div class="kcard b"><div class="klbl">月有效公会数</div><div class="kval b">${lp.月有效公会数}</div><div class="ksub">腰部公会 ${lp.月有效腰部公会数} 个</div></div>
+      <div class="kcard p"><div class="klbl">总收入预估</div><div class="kval p">$${N(lp.总收入预估)}</div><div class="ksub">总流水×5÷1440</div></div>
+    </div>
+    <div class="stitle">分月汇总明细</div>
+    <div class="twrap" style="margin-bottom:22px"><table>
+      <thead><tr><th>月份</th><th>上麦主播</th><th>有效上麦</th><th>有效主播</th><th>新增有效</th><th>收礼主播</th><th>达档主播</th><th>腰部主播</th><th>有效公会</th><th>腰部公会</th><th>总收入预估($)</th></tr></thead>
+      <tbody>${ms.map(m=>{const p=S.months[m].plat;return`<tr><td><span style="font-family:var(--mo);color:var(--ac)">${p.label}</span></td><td class="num">${N(p.月上麦主播数)}</td><td class="num">${N(p.月有效上麦主播数)}</td><td class="num">${N(p.月有效主播数)}</td><td class="num" style="color:var(--ac2)">${N(p.月新增有效主播数)}</td><td class="num">${N(p.月收礼主播数)}</td><td class="num" style="color:var(--ac3);font-weight:600">${N(p.月达档主播数)}</td><td class="num">${N(p.月腰部主播数)}</td><td class="num" style="color:var(--ac2)">${p.月有效公会数}</td><td class="num">${p.月有效腰部公会数}</td><td class="inc">$${N(p.总收入预估)}</td></tr>`;}).join('')}</tbody>
+    </table></div>
+    <div class="cgrid">
+      <div class="cc"><div class="ctitle">主播活跃度分月对比</div><div class="cw"><canvas id="pC1"></canvas></div></div>
+      <div class="cc"><div class="ctitle">收入 & 达档主播</div><div class="cw"><canvas id="pC2"></canvas></div></div>
+      <div class="cc wide"><div class="ctitle">公会质量分月趋势</div><div class="cw"><canvas id="pC3"></canvas></div></div>
+    </div>`;
+  setTimeout(()=>{
+    ['pC1','pC2','pC3'].forEach(dc);const lb=ms.map(m=>S.months[m].plat.label);
+    S.charts.pC1=new Chart(document.getElementById('pC1'),{type:'bar',data:{labels:lb,datasets:[{label:'上麦主播',data:ms.map(m=>S.months[m].plat.月上麦主播数),backgroundColor:'rgba(0,229,160,.18)',borderColor:'#00e5a0',borderWidth:2},{label:'有效上麦',data:ms.map(m=>S.months[m].plat.月有效上麦主播数),backgroundColor:'rgba(0,229,160,.45)',borderColor:'#00e5a0',borderWidth:2},{label:'有效主播',data:ms.map(m=>S.months[m].plat.月有效主播数),backgroundColor:'#00e5a0',borderColor:'#00e5a0',borderWidth:2}]},options:co('人数')});
+    S.charts.pC2=new Chart(document.getElementById('pC2'),{type:'bar',data:{labels:lb,datasets:[{label:'达档主播',data:ms.map(m=>S.months[m].plat.月达档主播数),backgroundColor:'rgba(245,158,11,.55)',borderColor:'#f59e0b',borderWidth:2,yAxisID:'y'},{label:'总收入$',data:ms.map(m=>S.months[m].plat.总收入预估),type:'line',borderColor:'#ec4899',backgroundColor:'transparent',borderWidth:2,pointRadius:4,tension:.3,yAxisID:'y2'}]},options:dco()});
+    S.charts.pC3=new Chart(document.getElementById('pC3'),{type:'line',data:{labels:lb,datasets:[{label:'有效公会',data:ms.map(m=>S.months[m].plat.月有效公会数),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.07)',borderWidth:2,pointRadius:4,tension:.3,fill:true},{label:'腰部公会',data:ms.map(m=>S.months[m].plat.月有效腰部公会数),borderColor:'#ec4899',backgroundColor:'rgba(236,72,153,.07)',borderWidth:2,pointRadius:4,tension:.3,fill:true}]},options:co('公会数')});
+    renderInsights(genPlatInsights(ms),'platInsights');
+  },50);
+}
+
+// ═══════════════════════════════════════════════════
+//  Guild Tab
+// ═══════════════════════════════════════════════════
+function renderGuild(){
+  const el=document.getElementById('p-guild'),ms=Object.keys(S.months).sort();
+  if(!ms.length){el.innerHTML=ND('🏛','请先上传数据');return;}
+  const ym=S.ym&&S.months[S.ym]?S.ym:ms[ms.length-1];
+  S.ym=ym;S.search='';S.page=1;
+  const gs=S.months[ym].guilds||[];
+  if(!gs.length){
+    el.innerHTML=`<div class="mchips" id="mcs">${ms.map(m=>`<div class="mc ${m===ym?'on':''}" onclick="selGM('${m}')">${S.months[m].plat.label}</div>`).join('')}</div><div class="nodata"><div class="nodata-ico">🏛</div><div class="nodata-t">该数据来自概览链接，不含公会明细</div><p style="margin-top:8px;font-size:13px">请让对方导出并发送「数据快照 .json」以查看完整公会数据</p></div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div class="mchips" id="mcs">${ms.map(m=>`<div class="mc ${m===ym?'on':''}" onclick="selGM('${m}')">${S.months[m].plat.label}</div>`).join('')}</div>
+    <div id="guildInsights"></div>
+    <div class="ttbar">
+      <div class="sbox"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="gs" placeholder="搜索公会名称 / ID..." oninput="fg(this.value)"></div>
+      <div style="display:flex;gap:8px;align-items:center"><span style="color:var(--mu);font-size:12px" id="gc"></span><select id="gf" onchange="fg()"><option value="all">全部</option><option value="valid">有效公会</option><option value="waist">腰部公会</option></select></div>
+    </div>
+    <div class="twrap" id="gw"></div>
+    <div class="pag" id="gp"></div>
+    <div style="height:22px"></div>
+    <div class="cgrid">
+      <div class="cc"><div class="ctitle">Top15 达档主播数</div><div class="cw tall"><canvas id="gC1"></canvas></div></div>
+      <div class="cc"><div class="ctitle">Top15 收入预估($)</div><div class="cw tall"><canvas id="gC2"></canvas></div></div>
+      <div class="cc wide"><div class="ctitle">公会达档分层分布</div><div class="cw"><canvas id="gC3"></canvas></div></div>
+    </div>`;
+  rGT(gs);setTimeout(()=>{dgC(gs);renderInsights(genGuildInsights(ms,gs),'guildInsights');},50);
+}
+
+function selGM(ym){S.ym=ym;S.page=1;document.querySelectorAll('#mcs .mc').forEach(c=>c.classList.toggle('on',c.textContent===S.months[ym].plat.label));const gs=S.months[ym].guilds;rGT(gs);['gC1','gC2','gC3'].forEach(dc);setTimeout(()=>{dgC(gs);renderInsights(genGuildInsights(Object.keys(S.months).sort(),gs),'guildInsights');},50);}
+function fg(v){if(v!==undefined)S.search=v;S.page=1;rGT(S.months[S.ym]?.guilds||[]);}
+function fG(all){const ft=document.getElementById('gf')?.value||'all',q=S.search.toLowerCase();return all.filter(g=>{const nm=!q||g.gname.toLowerCase().includes(q)||String(g.gid).includes(q);const tp=ft==='all'||(ft==='valid'&&g.是否有效公会)||(ft==='waist'&&g.是否有效腰部公会);return nm&&tp;});}
+
+function rGT(all){
+  const f=fG(all);document.getElementById('gc').textContent=`共 ${f.length} 个公会`;
+  const tot=Math.ceil(f.length/S.ps),pg=Math.min(S.page,tot||1),rows=f.slice((pg-1)*S.ps,pg*S.ps);
+  const H=[{k:'排名',l:'排名'},{k:'gname',l:'公会名称'},{k:'月上麦主播数',l:'上麦'},{k:'月有效上麦主播数',l:'有效上麦'},{k:'月有效主播数',l:'有效主播'},{k:'月新增有效主播数',l:'新增有效'},{k:'月收礼主播数',l:'收礼'},{k:'月达档主播数',l:'达档(≥2500)'},{k:'月腰部主播数',l:'腰部(≥60000)'},{k:'收入预估',l:'收入预估($)'},{k:'是否有效公会',l:'有效公会'},{k:'是否有效腰部公会',l:'腰部公会'}];
+  const rb=r=>`<span class="rb ${r===1?'r1':r===2?'r2':r===3?'r3':'rn'}">${r}</span>`;
+  document.getElementById('gw').innerHTML=`<table><thead><tr>${H.map(h=>`<th onclick="sG('${h.k}')" class="${S.sortCol===h.k?'sorted':''}">${h.l}<span class="si">${S.sortCol===h.k?(S.sortAsc?'↑':'↓'):'⇅'}</span></th>`).join('')}</tr></thead><tbody>${
+    rows.length?rows.map(g=>`<tr><td>${rb(g.排名)}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${g.gname}">${g.gname}</td><td class="num">${g.月上麦主播数}</td><td class="num">${g.月有效上麦主播数}</td><td class="num">${g.月有效主播数}</td><td class="num" style="color:var(--ac2)">${g.月新增有效主播数}</td><td class="num">${g.月收礼主播数}</td><td class="num" style="color:var(--ac3);font-weight:600">${g.月达档主播数}</td><td class="num">${g.月腰部主播数}</td><td class="inc">$${N(g.收入预估)}</td><td>${g.是否有效公会?'<span class="badge by">✓ 是</span>':'<span class="badge bn">否</span>'}</td><td>${g.是否有效腰部公会?'<span class="badge bw">✓ 是</span>':'<span class="badge bn">否</span>'}</td></tr>`).join(''):'<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--mu)">无数据</td></tr>'
+  }</tbody></table>`;
+  const pp=document.getElementById('gp');
+  if(tot>1){const s=Math.max(1,Math.min(pg-2,tot-4)),pns=Array.from({length:Math.min(5,tot)},(_,i)=>s+i);pp.innerHTML=`<span>第${(pg-1)*S.ps+1}–${Math.min(pg*S.ps,f.length)}条，共${f.length}条</span><div class="pbtns"><button class="pb" onclick="gop(${pg-1})" ${pg===1?'disabled':''}>‹</button>${pns.map(p=>`<button class="pb ${p===pg?'on':''}" onclick="gop(${p})">${p}</button>`).join('')}<button class="pb" onclick="gop(${pg+1})" ${pg===tot?'disabled':''}>›</button></div>`;}else pp.innerHTML='';
+}
+function gop(p){S.page=p;rGT(S.months[S.ym]?.guilds||[]);}
+function sG(col){if(S.sortCol===col)S.sortAsc=!S.sortAsc;else{S.sortCol=col;S.sortAsc=false;}const gs=S.months[S.ym]?.guilds||[];gs.sort((a,b)=>{const av=a[col]??0,bv=b[col]??0;const r=typeof av==='string'?av.localeCompare(bv):av-bv;return S.sortAsc?r:-r;});S.page=1;rGT(gs);}
+
+function dgC(gs){
+  const t15=gs.slice(0,15),COLS=['#00e5a0','#3b82f6','#f59e0b','#ec4899','#8b5cf6','#06b6d4','#10b981','#f97316','#a855f7','#14b8a6','#84cc16','#f43f5e','#6366f1','#0ea5e9','#d97706'];
+  const lb=g=>(g.gname.length>8?g.gname.slice(0,8)+'…':g.gname);
+  S.charts.gC1=new Chart(document.getElementById('gC1'),{type:'bar',data:{labels:t15.map(lb),datasets:[{label:'达档',data:t15.map(g=>g.月达档主播数),backgroundColor:COLS.map(c=>c+'99'),borderColor:COLS,borderWidth:1.5,borderRadius:4}]},options:{...co('人数'),indexAxis:'y',plugins:{legend:{display:false}}}});
+  const tI=[...gs].sort((a,b)=>b.收入预估-a.收入预估).slice(0,15);
+  S.charts.gC2=new Chart(document.getElementById('gC2'),{type:'bar',data:{labels:tI.map(lb),datasets:[{label:'收入$',data:tI.map(g=>g.收入预估),backgroundColor:'rgba(245,158,11,.45)',borderColor:'#f59e0b',borderWidth:1.5,borderRadius:4}]},options:{...co('$'),indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b7280',font:{size:11},callback:v=>'$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#6b7280',font:{size:10}},grid:{display:false}}}}});
+  const tiers=[{l:'0',fn:g=>g.月达档主播数===0},{l:'1–5',fn:g=>g.月达档主播数>=1&&g.月达档主播数<=5},{l:'6–10',fn:g=>g.月达档主播数>=6&&g.月达档主播数<=10},{l:'11–30',fn:g=>g.月达档主播数>=11&&g.月达档主播数<=30},{l:'31–100',fn:g=>g.月达档主播数>=31&&g.月达档主播数<=100},{l:'>100',fn:g=>g.月达档主播数>100}];
+  S.charts.gC3=new Chart(document.getElementById('gC3'),{type:'doughnut',data:{labels:tiers.map(t=>t.l+'人'),datasets:[{data:tiers.map(t=>gs.filter(t.fn).length),backgroundColor:['rgba(107,114,128,.35)','rgba(0,229,160,.22)','rgba(0,229,160,.48)','rgba(59,130,246,.48)','rgba(245,158,11,.58)','rgba(236,72,153,.68)'],borderColor:'#0d0f14',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#6b7280',font:{size:12},padding:12,boxWidth:12}}}}});
+}
+
+// ═══════════════════════════════════════════════════
+//  Trend Tab
+// ═══════════════════════════════════════════════════
+function renderTrend(){
+  const el=document.getElementById('p-trend'),ms=Object.keys(S.months).sort();
+  if(!ms.length){el.innerHTML=ND('📈','上传数据后查看趋势');return;}
+  el.innerHTML=`
+    <div class="stitle">平台指标趋势</div>
+    <div class="cgrid">
+      <div class="cc"><div class="ctitle">主播活跃漏斗</div><div class="cw"><canvas id="tC1"></canvas></div></div>
+      <div class="cc"><div class="ctitle">收入预估趋势</div><div class="cw"><canvas id="tC2"></canvas></div></div>
+      <div class="cc"><div class="ctitle">有效率变化（÷上麦）</div><div class="cw"><canvas id="tC3"></canvas></div></div>
+      <div class="cc"><div class="ctitle">公会质量指数</div><div class="cw"><canvas id="tC4"></canvas></div></div>
+    </div>
+    <div class="stitle" style="margin-top:6px">各公会跨月对比</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <span style="color:var(--mu);font-size:13px">指标：</span>
+      <select id="tm" onchange="rGT2()"><option value="月达档主播数">月达档主播数</option><option value="月有效主播数">月有效主播数</option><option value="月新增有效主播数">月新增有效主播数</option><option value="收入预估">收入预估($)</option><option value="月腰部主播数">月腰部主播数</option></select>
+      <span style="color:var(--mu);font-size:13px">Top：</span>
+      <select id="tn" onchange="rGT2()"><option value="10">10</option><option value="15" selected>15</option><option value="20">20</option></select>
+    </div>
+    <div class="cc wide"><div class="ctitle" id="gtt">各公会月达档主播数趋势</div><div class="cw tall"><canvas id="tC5"></canvas></div></div>`;
+  setTimeout(()=>{
+    ['tC1','tC2','tC3','tC4','tC5'].forEach(dc);const lb=ms.map(m=>S.months[m].plat.label);
+    S.charts.tC1=new Chart(document.getElementById('tC1'),{type:'line',data:{labels:lb,datasets:[{label:'上麦',data:ms.map(m=>S.months[m].plat.月上麦主播数),borderColor:'#00e5a0',backgroundColor:'rgba(0,229,160,.07)',borderWidth:2,pointRadius:3,tension:.3,fill:true},{label:'有效上麦',data:ms.map(m=>S.months[m].plat.月有效上麦主播数),borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.3},{label:'有效主播',data:ms.map(m=>S.months[m].plat.月有效主播数),borderColor:'#f59e0b',backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.3},{label:'新增有效',data:ms.map(m=>S.months[m].plat.月新增有效主播数),borderColor:'#ec4899',backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.3,borderDash:[4,3]}]},options:co('人数')});
+    S.charts.tC2=new Chart(document.getElementById('tC2'),{type:'line',data:{labels:lb,datasets:[{label:'总收入$',data:ms.map(m=>S.months[m].plat.总收入预估),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.09)',borderWidth:2.5,pointRadius:4,tension:.3,fill:true}]},options:{...co('$'),scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#f59e0b',font:{size:11},callback:v=>'$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,.04)'}}}}});
+    S.charts.tC3=new Chart(document.getElementById('tC3'),{type:'bar',data:{labels:lb,datasets:[{label:'有效上麦率%',data:ms.map(m=>{const p=S.months[m].plat;return p.月上麦主播数?+(p.月有效上麦主播数/p.月上麦主播数*100).toFixed(1):0;}),backgroundColor:'rgba(0,229,160,.55)',borderColor:'#00e5a0',borderWidth:1.5,borderRadius:4},{label:'有效主播率%',data:ms.map(m=>{const p=S.months[m].plat;return p.月上麦主播数?+(p.月有效主播数/p.月上麦主播数*100).toFixed(1):0;}),backgroundColor:'rgba(59,130,246,.55)',borderColor:'#3b82f6',borderWidth:1.5,borderRadius:4}]},options:{...co('%'),scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#6b7280',font:{size:11},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.04)'},max:100}}}});
+    S.charts.tC4=new Chart(document.getElementById('tC4'),{type:'bar',data:{labels:lb,datasets:[{label:'有效公会',data:ms.map(m=>S.months[m].plat.月有效公会数),backgroundColor:'rgba(59,130,246,.55)',borderColor:'#3b82f6',borderWidth:1.5,borderRadius:4},{label:'腰部公会',data:ms.map(m=>S.months[m].plat.月有效腰部公会数),backgroundColor:'rgba(236,72,153,.55)',borderColor:'#ec4899',borderWidth:1.5,borderRadius:4}]},options:co('公会数')});
+    rGT2();
+  },50);
+}
+
+function rGT2(){
+  const metric=document.getElementById('tm')?.value||'月达档主播数',topN=+document.getElementById('tn')?.value||15;
+  const ms=Object.keys(S.months).sort();if(!ms.length)return;
+  document.getElementById('gtt').textContent=`各公会 · ${metric} 月度趋势`;
+  const tops=[...S.months[ms[ms.length-1]].guilds].sort((a,b)=>(b[metric]||0)-(a[metric]||0)).slice(0,topN);
+  const COLS=['#00e5a0','#3b82f6','#f59e0b','#ec4899','#8b5cf6','#06b6d4','#10b981','#f97316','#a855f7','#14b8a6','#84cc16','#f43f5e','#6366f1','#0ea5e9','#d97706','#6b7280','#fb923c','#22d3ee','#c084fc','#4ade80'];
+  dc('tC5');
+  S.charts.tC5=new Chart(document.getElementById('tC5'),{type:'line',data:{labels:ms.map(m=>S.months[m].plat.label),datasets:tops.map((g,i)=>({label:g.gname.length>10?g.gname.slice(0,10)+'…':g.gname,data:ms.map(m=>{const f=S.months[m].guilds.find(x=>x.gid===g.gid);return f?(f[metric]||0):null;}),borderColor:COLS[i%COLS.length],backgroundColor:'transparent',borderWidth:1.8,pointRadius:3,tension:.3,spanGaps:true}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#6b7280',font:{size:11},boxWidth:10,padding:6}}},scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}}}}});
+}
+
+// ═══════════════════════════════════════════════════
+//  Persistence — localStorage + URL hash
+// ═══════════════════════════════════════════════════
+const LS_KEY='arab_guild_v2';
+
+function saveToStorage(){
+  try{
+    // 只存 plat 和 guilds（精简掉 fileName 等临时字段），guilds 只存计算结果字段
+    const payload=Object.fromEntries(Object.entries(S.months).map(([ym,m])=>[ym,{
+      plat:m.plat,
+      guilds:m.guilds.map(g=>({gid:g.gid,gname:g.gname,排名:g.排名,月上麦主播数:g.月上麦主播数,月有效上麦主播数:g.月有效上麦主播数,月有效主播数:g.月有效主播数,月新增有效主播数:g.月新增有效主播数,月收礼主播数:g.月收礼主播数,月达档主播数:g.月达档主播数,月腰部主播数:g.月腰部主播数,总流水:g.总流水,收入预估:g.收入预估,是否有效公会:g.是否有效公会,是否有效腰部公会:g.是否有效腰部公会}))
+    }]));
+    localStorage.setItem(LS_KEY,JSON.stringify(payload));
+    updateStorageBanner();
+  }catch(e){console.warn('localStorage save failed',e);}
+}
+
+function loadFromStorage(){
+  // 优先检查内嵌数据（分享 HTML 打开时）
+  if(window.__EMBED_DATA__){
+    try{
+      const payload=window.__EMBED_DATA__;
+      Object.entries(payload).forEach(([ym,m])=>{S.months[ym]={plat:m.plat,guilds:m.guilds||[],fileName:'(内嵌数据)'};});
+      const ks=Object.keys(S.months).sort();S.ym=ks.length?ks[ks.length-1]:null;
+      const id='embed_init';
+      S.items[id]={name:'内嵌数据（'+ks.map(m=>S.months[m].plat.label).join('、')+'）',status:'done',yms:ks,rowCount:null,ext:'cache'};
+      window.__EMBED_DATA__=null; // 清除避免重复加载
+      return true;
+    }catch(e){console.warn('embed data load failed',e);}
+  }
+  // 再读 localStorage
+  try{
+    const raw=localStorage.getItem(LS_KEY);if(!raw)return false;
+    const payload=JSON.parse(raw);
+    Object.entries(payload).forEach(([ym,m])=>{S.months[ym]={...m,fileName:'(缓存)'}; });
+    const ks=Object.keys(S.months).sort();S.ym=ks.length?ks[ks.length-1]:null;
+    updateStorageBanner();
+    // create synthetic file items for display
+    const ymGroups={};
+    ks.forEach(ym=>{const fn=S.months[ym].fileName||'(缓存)';if(!ymGroups[fn])ymGroups[fn]=[];ymGroups[fn].push(ym);});
+    Object.entries(ymGroups).forEach(([fn,yms])=>{
+      const id='cache_'+yms.join('_');
+      const totalRows=yms.reduce((s,ym)=>s+(S.months[ym]?.guilds?.length*1||0),0);
+      S.items[id]={name:fn,status:'done',yms,rowCount:null,ext:'cache'};
+    });
+    return ks.length>0;
+  }catch(e){console.warn('localStorage load failed',e);return false;}
+}
+
+function clearStorage(){
+  if(!confirm('确认清除本地缓存？已加载的数据也将消失。'))return;
+  localStorage.removeItem(LS_KEY);
+  S.months={};S.items={};S.ym=null;
+  rFL();updateStorageBanner();toast('本地缓存已清除','info');
+}
+
+function updateStorageBanner(){
+  const banner=document.getElementById('storageBanner');
+  const info=document.getElementById('storageInfo');
+  const ms=Object.keys(S.months).sort();
+  if(!banner||!info)return;
+  if(!ms.length){banner.style.display='none';return;}
+  banner.style.display='flex';
+  info.textContent=`已有 ${ms.length} 个月份数据（${ms.map(m=>S.months[m].plat.label).join('、')}）`;
+}
+
+// ═══════════════════════════════════════════════════
+//  导出含数据的独立 HTML（分享用）
+// ═══════════════════════════════════════════════════
+function exportHTML(){
+  const ms=Object.keys(S.months).sort();
+  if(!ms.length){toast('请先上传数据','error');return;}
+  toast('正在生成 HTML...','info');
+
+  // 序列化数据
+  const payload=Object.fromEntries(ms.map(ym=>{
+    const m=S.months[ym];
+    return[ym,{
+      plat:m.plat,
+      guilds:(m.guilds||[]).map(g=>({gid:g.gid,gname:g.gname,排名:g.排名,
+        月上麦主播数:g.月上麦主播数,月有效上麦主播数:g.月有效上麦主播数,月有效主播数:g.月有效主播数,
+        月新增有效主播数:g.月新增有效主播数,月收礼主播数:g.月收礼主播数,月达档主播数:g.月达档主播数,
+        月腰部主播数:g.月腰部主播数,总流水:g.总流水,收入预估:g.收入预估,
+        是否有效公会:g.是否有效公会,是否有效腰部公会:g.是否有效腰部公会}))
+    }];
+  }));
+
+  // 直接从当前 DOM 生成，不再 fetch(location.href)。
+  // GitHub Pages 上同页请求可能长期处于 pending，导致界面一直停在“正在生成 HTML”。
+  const page=document.documentElement.cloneNode(true);
+  const toastContainer=page.querySelector('#tc');
+  if(toastContainer)toastContainer.innerHTML='';
+  let src='<!DOCTYPE html>\n'+page.outerHTML;
+
+  // 把数据注入到 <head> 最顶部，确保在所有其他脚本之前赋值
+  // 转义 <，避免公会名称等数据意外结束注入脚本。
+  const safePayload=JSON.stringify(payload).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+  const embedScript=`<script>window.__EMBED_DATA__=${safePayload};<\/script>`;
+
+  // 移除旧的注入块避免叠加
+  let out=src.replace(/<script>window\.__EMBED_DATA__[\s\S]*?<\/script>/,'');
+  // 注入到 <head> 后紧接着
+  out=out.replace('<head>','<head>\n'+embedScript);
+
+  const fname=`阿语大区运营分析_${ms.map(m=>S.months[m].plat.label).join('-')}.html`;
+  const blob=new Blob([out],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  const url=URL.createObjectURL(blob);
+  a.href=url;a.download=fname;a.style.display='none';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast(`已下载「${fname}」，双击用浏览器打开即可查看`,'success');
+}
+
+// ═══════════════════════════════════════════════════
+//  Insight Engine — 自动数据分析结论
+// ═══════════════════════════════════════════════════
+function pct(a,b){return b?((a-b)/b*100).toFixed(1):null;}
+function fmtPct(v){if(v===null)return'';const n=+v;return n>0?`<span class="insight-tag it-up">↑${n}%</span>`:`<span class="insight-tag it-dn">↓${Math.abs(n)}%</span>`;}
+function fmtVal(v){return`<span class="hi">${typeof v==='number'?v.toLocaleString():v}</span>`;}
+
+function genPlatInsights(ms){
+  if(ms.length<2)return[];
+  const insights=[];
+  const latest=S.months[ms[ms.length-1]].plat;
+  const prev=S.months[ms[ms.length-2]].plat;
+
+  // 收入趋势
+  const incChg=pct(latest.总收入预估,prev.总收入预估);
+  insights.push({color:'#00e5a0',text:`最新月（${latest.label}）总收入预估 ${fmtVal('$'+latest.总收入预估.toLocaleString())}，较上月${fmtPct(incChg)}${incChg&&+incChg>0?'，保持增长态势':'，需关注收入下滑原因'}`});
+
+  // 有效主播变化
+  const effChg=pct(latest.月有效主播数,prev.月有效主播数);
+  insights.push({color:'#3b82f6',text:`有效主播数 ${fmtVal(latest.月有效主播数)} 人${fmtPct(effChg)}，达档率 ${fmtVal((latest.月有效主播数?latest.月达档主播数/latest.月有效主播数*100:0).toFixed(1)+'%')}（达档/有效主播），腰部占达档的 ${fmtVal((latest.月达档主播数?latest.月腰部主播数/latest.月达档主播数*100:0).toFixed(1)+'%')}`});
+
+  // 新增拉新
+  const newChg=pct(latest.月新增有效主播数,prev.月新增有效主播数);
+  insights.push({color:'#ec4899',text:`月新增有效主播 ${fmtVal(latest.月新增有效主播数)} 人${fmtPct(newChg)}，占有效主播比例 ${fmtVal((latest.月有效主播数?latest.月新增有效主播数/latest.月有效主播数*100:0).toFixed(1)+'%')}${+latest.月新增有效主播数/latest.月有效主播数>0.3?' — 新人占比较高，注意留存质量':''}`});
+
+  // 公会质量
+  const gChg=pct(latest.月有效公会数,prev.月有效公会数);
+  insights.push({color:'#f59e0b',text:`有效公会 ${fmtVal(latest.月有效公会数)} 个${fmtPct(gChg)}，有效腰部公会 ${fmtVal(latest.月有效腰部公会数)} 个；腰部公会覆盖率 ${fmtVal((latest.月有效公会数?latest.月有效腰部公会数/latest.月有效公会数*100:0).toFixed(0)+'%')}`});
+
+  // 全周期趋势判断
+  if(ms.length>=3){
+    const first=S.months[ms[0]].plat;
+    const totalGrowth=pct(latest.总收入预估,first.总收入预估);
+    const peakM=ms.reduce((a,b)=>S.months[a].plat.总收入预估>S.months[b].plat.总收入预估?a:b);
+    const isPeak=peakM===ms[ms.length-1];
+    insights.push({color:'#8b5cf6',text:`${first.label}→${latest.label} 累计收入增长 ${fmtPct(totalGrowth)}；收入峰值出现在 ${fmtVal(S.months[peakM].plat.label)}（$${S.months[peakM].plat.总收入预估.toLocaleString()}）${isPeak?'，当前处于历史高位':'，当前未达峰值水平'}`});
+  }
+  return insights;
+}
+
+function genGuildInsights(ms,guilds){
+  if(!guilds||!guilds.length)return[];
+  const insights=[];
+  // top3 贡献度
+  const total=guilds.reduce((s,g)=>s+g.月达档主播数,0);
+  const top3=guilds.slice(0,3);
+  const top3sum=top3.reduce((s,g)=>s+g.月达档主播数,0);
+  if(total>0)insights.push({color:'#00e5a0',text:`Top 3 公会（${top3.map(g=>`<strong>${g.gname}</strong>`).join('、')}）合计达档 ${fmtVal(top3sum)} 人，占全平台 ${fmtVal((top3sum/total*100).toFixed(1)+'%')}，头部集中度${top3sum/total>0.4?'较高':'适中'}`});
+
+  // 零达档公会占比
+  const zeroG=guilds.filter(g=>g.月达档主播数===0).length;
+  insights.push({color:'#f59e0b',text:`本月共 ${fmtVal(guilds.length)} 个公会有数据，其中 ${fmtVal(zeroG)} 个（${(zeroG/guilds.length*100).toFixed(0)}%）零达档 — 这些公会主播活跃但无有效产出`});
+
+  // 高拉新低达档公会
+  const highNew=guilds.filter(g=>g.月新增有效主播数>=10&&g.月达档主播数<10);
+  if(highNew.length)insights.push({color:'#ec4899',text:`${fmtVal(highNew.length)} 个公会新增有效主播≥10人但达档<10 — 拉新转化率待提升：${highNew.slice(0,3).map(g=>g.gname).join('、')}${highNew.length>3?'等':''}`});
+
+  // 收入最高 vs 达档最多
+  const topInc=guilds.slice().sort((a,b)=>b.收入预估-a.收入预估)[0];
+  const topDa=guilds[0];
+  if(topInc&&topDa&&topInc.gid!==topDa.gid)insights.push({color:'#3b82f6',text:`达档最多的公会（${fmtVal(topDa.gname)}，${topDa.月达档主播数}人）≠ 收入最高（${fmtVal(topInc.gname)}，$${topInc.收入预估.toLocaleString()}）— 说明主播人均流水存在显著差异`});
+
+  // 跨月趋势（如有多月）
+  if(ms.length>=2){
+    const lym=ms[ms.length-1],pym=ms[ms.length-2];
+    const lGs=S.months[lym].guilds,pGs=S.months[pym].guilds;
+    const risers=lGs.filter(g=>{const pg=pGs.find(x=>x.gid===g.gid);return pg&&g.月达档主播数-pg.月达档主播数>=5;}).slice(0,3);
+    const fallers=lGs.filter(g=>{const pg=pGs.find(x=>x.gid===g.gid);return pg&&pg.月达档主播数-g.月达档主播数>=5;}).slice(0,3);
+    if(risers.length)insights.push({color:'#10b981',text:`较上月明显增长（达档+5以上）：${risers.map(g=>`<strong>${g.gname}</strong> +${g.月达档主播数-(pGs.find(x=>x.gid===g.gid)?.月达档主播数||0)}`).join('、')}`});
+    if(fallers.length)insights.push({color:'#ef4444',text:`较上月明显下滑（达档-5以上）：${fallers.map(g=>`<strong>${g.gname}</strong> -${(pGs.find(x=>x.gid===g.gid)?.月达档主播数||0)-g.月达档主播数}`).join('、')} — 建议重点关注`});
+  }
+  return insights;
+}
+
+function renderInsights(items,containerId){
+  const el=document.getElementById(containerId);if(!el||!items.length)return;
+  el.innerHTML=`<div class="insight-box"><div class="insight-box-title">智能分析结论</div><div class="insight-list">${
+    items.map(it=>`<div class="insight-item"><div class="insight-dot" style="background:${it.color}"></div><div class="insight-text">${it.text}</div></div>`).join('')
+  }</div></div>`;
+}
+
+// ═══════════════════════════════════════════════════
+//  Export
+// ═══════════════════════════════════════════════════
+function exportExcel(){
+  const ms=Object.keys(S.months).sort();if(!ms.length){toast('请先上传数据','error');return;}
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ms.map(m=>{const p=S.months[m].plat;return{'月份':p.label,'月上麦主播数':p.月上麦主播数,'月有效上麦主播数':p.月有效上麦主播数,'月有效主播数':p.月有效主播数,'月新增有效主播数':p.月新增有效主播数,'月收礼主播数':p.月收礼主播数,'月达档主播数':p.月达档主播数,'月腰部主播数':p.月腰部主播数,'月有效公会数':p.月有效公会数,'月有效腰部公会数':p.月有效腰部公会数,'总收入预估($)':p.总收入预估};})),'平台分月汇总');
+  ms.forEach(m=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.months[m].guilds.map(g=>({'排名':g.排名,'公会ID':g.gid,'公会名称':g.gname,'月上麦主播数':g.月上麦主播数,'月有效上麦主播数':g.月有效上麦主播数,'月有效主播数':g.月有效主播数,'月新增有效主播数':g.月新增有效主播数,'月收礼主播数':g.月收礼主播数,'月达档主播数':g.月达档主播数,'月腰部主播数':g.月腰部主播数,'总收入预估($)':g.收入预估,'是否有效公会':g.是否有效公会?'是':'否','是否有效腰部公会':g.是否有效腰部公会?'是':'否'}))),S.months[m].plat.label+'公会'));
+  XLSX.writeFile(wb,`阿语大区运营分析_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel 导出成功','success');
+}
+
+async function exportPDF(){
+  const ms=Object.keys(S.months).sort();
+  if(!ms.length){toast('请先上传数据','error');return;}
+  toast('正在生成 PDF，请稍候...','info');
+
+  // 构建一个屏外渲染容器，白底 + 宋体系字体，避免深色背景打印不友好
+  const wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-9999px;top:0;width:1100px;background:#fff;color:#111;font-family:\'Noto Sans SC\',\'Microsoft YaHei\',SimSun,sans-serif;font-size:13px;padding:32px 40px;box-sizing:border-box';
+
+  const lym=ms[ms.length-1];
+  const platRows=ms.map(m=>{
+    const p=S.months[m].plat;
+    return`<tr><td>${p.label}</td><td>${N(p.月上麦主播数)}</td><td>${N(p.月有效上麦主播数)}</td><td>${N(p.月有效主播数)}</td><td>${N(p.月新增有效主播数)}</td><td>${N(p.月收礼主播数)}</td><td>${N(p.月达档主播数)}</td><td>${N(p.月腰部主播数)}</td><td>${p.月有效公会数}</td><td>${p.月有效腰部公会数}</td><td>$${N(p.总收入预估)}</td></tr>`;
+  }).join('');
+
+  const guildRows=(S.months[lym].guilds||[]).slice(0,60).map(g=>
+    `<tr><td>${g.排名}</td><td style="max-width:140px;word-break:break-all">${g.gname}</td><td>${g.月上麦主播数}</td><td>${g.月有效上麦主播数}</td><td>${g.月有效主播数}</td><td>${g.月新增有效主播数}</td><td>${g.月收礼主播数}</td><td><b>${g.月达档主播数}</b></td><td>${g.月腰部主播数}</td><td>$${N(g.收入预估)}</td><td>${g.是否有效公会?'✓':''}</td><td>${g.是否有效腰部公会?'✓':''}</td></tr>`
+  ).join('');
+
+  const tStyle=`style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:28px"`;
+  const thStyle=`style="background:#0f6e56;color:#fff;padding:7px 10px;text-align:left;white-space:nowrap"`;
+  const tdStyle=`style="padding:6px 10px;border-bottom:1px solid #e5e7eb;white-space:nowrap"`;
+
+  wrap.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;border-bottom:2px solid #0f6e56;padding-bottom:14px">
+      <div>
+        <div style="font-size:20px;font-weight:700;color:#0f6e56">阿语大区运营分析报告</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px">导出时间：${new Date().toLocaleString('zh-CN')} · 覆盖月份：${ms.map(m=>S.months[m].plat.label).join('、')}</div>
+      </div>
+    </div>
+
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:#111">一、平台分月汇总</div>
+    <table ${tStyle}>
+      <thead><tr>
+        <th ${thStyle}>月份</th><th ${thStyle}>上麦主播</th><th ${thStyle}>有效上麦</th><th ${thStyle}>有效主播</th>
+        <th ${thStyle}>新增有效</th><th ${thStyle}>收礼主播</th><th ${thStyle}>达档主播</th><th ${thStyle}>腰部主播</th>
+        <th ${thStyle}>有效公会</th><th ${thStyle}>腰部公会</th><th ${thStyle}>总收入预估($)</th>
+      </tr></thead>
+      <tbody>${platRows.replace(/<td>/g,`<td ${tdStyle}>`)}</tbody>
+    </table>
+
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:#111">二、${S.months[lym].plat.label} · 公会明细（前60）</div>
+    <table ${tStyle}>
+      <thead><tr>
+        <th ${thStyle}>排名</th><th ${thStyle}>公会名称</th><th ${thStyle}>上麦</th><th ${thStyle}>有效上麦</th>
+        <th ${thStyle}>有效主播</th><th ${thStyle}>新增有效</th><th ${thStyle}>收礼</th><th ${thStyle}>达档</th>
+        <th ${thStyle}>腰部</th><th ${thStyle}>收入预估($)</th><th ${thStyle}>有效公会</th><th ${thStyle}>腰部公会</th>
+      </tr></thead>
+      <tbody>${guildRows.replace(/<td>/g,`<td ${tdStyle}>`)}</tbody>
+    </table>
+  `;
+
+  document.body.appendChild(wrap);
+
+  try{
+    const canvas=await html2canvas(wrap,{scale:1.5,useCORS:true,backgroundColor:'#ffffff',logging:false});
+    const imgData=canvas.toDataURL('image/jpeg',0.92);
+    const{jsPDF}=window.jspdf;
+    // A4 宽 210mm，高 297mm；横向 297x210
+    const pageW=210,pageH=297;
+    const imgW=pageW-20; // 左右各留 10mm
+    const imgH=canvas.height*(imgW/canvas.width);
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    let y=10;
+    let remainH=imgH;
+    let srcY=0;
+    const usableH=pageH-20; // 上下各留 10mm
+    while(remainH>0){
+      const sliceH=Math.min(remainH,usableH);
+      const sliceCanvas=document.createElement('canvas');
+      const ratio=canvas.width/imgW;
+      sliceCanvas.width=canvas.width;
+      sliceCanvas.height=Math.round(sliceH*ratio);
+      const ctx=sliceCanvas.getContext('2d');
+      ctx.drawImage(canvas,0,Math.round(srcY*ratio),canvas.width,sliceCanvas.height,0,0,canvas.width,sliceCanvas.height);
+      const sliceData=sliceCanvas.toDataURL('image/jpeg',0.92);
+      if(srcY>0)doc.addPage();
+      doc.addImage(sliceData,'JPEG',10,10,imgW,sliceH);
+      srcY+=sliceH;remainH-=sliceH;
+    }
+    doc.save(`阿语大区运营分析_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast('PDF 导出成功','success');
+  }catch(e){
+    toast('PDF 生成失败：'+e.message,'error');
+  }finally{
+    document.body.removeChild(wrap);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  Utils
+// ═══════════════════════════════════════════════════
+function co(yl){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#6b7280',font:{size:11},boxWidth:10,padding:11}}},scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},title:{display:!!yl,text:yl,color:'#6b7280',font:{size:10}}}}};}
+function dco(){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#6b7280',font:{size:11},boxWidth:10,padding:11}}},scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},y:{position:'left',ticks:{color:'#f59e0b',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},y2:{position:'right',ticks:{color:'#ec4899',font:{size:11},callback:v=>'$'+v.toLocaleString()},grid:{display:false}}}};}
+function dc(id){if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];}}
+function ND(i,t){return`<div class="nodata"><div class="nodata-ico">${i}</div><div class="nodata-t">${t}</div></div>`;}
+function N(v){return typeof v==='number'?v.toLocaleString():v;}
+function toast(msg,type='success'){const el=document.createElement('div');el.className=`toast ${type}`;el.innerHTML=`<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span> ${msg}`;document.getElementById('tc').appendChild(el);setTimeout(()=>el.remove(),4000);}
+
+// ═══════════════════════════════════════════════════
+//  GitHub 仓库云端同步
+//  仓库: jayden466/anchor_new_reward_tool
+//  数据文件: data/guild_analytics.json (main 分支)
+// ═══════════════════════════════════════════════════
+const REPO_OWNER = 'jayden466';
+const REPO_NAME  = 'Agency-Month-Tool';
+const DATA_PATH  = 'data/guild_analytics.json';
+const SYNC_TOKEN_KEY = 'arab_sync_token';
+
+function openSyncModal(){
+  const t=localStorage.getItem(SYNC_TOKEN_KEY)||'';
+  document.getElementById('syncToken').value=t;
+  document.getElementById('syncTokenStatus').textContent=t?'✓ Token 已保存':'（仅推送需要 Token，拉取无需）';
+  document.getElementById('syncStatus').textContent='';
+  document.getElementById('syncModal').style.display='block';
+}
+function closeSyncModal(){document.getElementById('syncModal').style.display='none';}
+
+function saveSyncToken(){
+  const t=document.getElementById('syncToken').value.trim();
+  if(!t){toast('请输入 Token','error');return;}
+  localStorage.setItem(SYNC_TOKEN_KEY,t);
+  document.getElementById('syncTokenStatus').textContent='✓ Token 已保存到本地浏览器';
+  toast('Token 已保存','success');
+}
+
+function serializeMonths(){
+  return Object.fromEntries(Object.keys(S.months).sort().map(ym=>{
+    const m=S.months[ym];
+    return[ym,{
+      plat:m.plat,
+      guilds:(m.guilds||[]).map(g=>({
+        gid:g.gid,gname:g.gname,排名:g.排名,
+        月上麦主播数:g.月上麦主播数,月有效上麦主播数:g.月有效上麦主播数,
+        月有效主播数:g.月有效主播数,月新增有效主播数:g.月新增有效主播数,
+        月收礼主播数:g.月收礼主播数,月达档主播数:g.月达档主播数,
+        月腰部主播数:g.月腰部主播数,总流水:g.总流水,收入预估:g.收入预估,
+        是否有效公会:g.是否有效公会,是否有效腰部公会:g.是否有效腰部公会
+      }))
+    }];
+  }));
+}
+
+function setSyncStatus(msg,color='var(--mu)'){
+  const el=document.getElementById('syncStatus');
+  if(el){el.textContent=msg;el.style.color=color;}
+}
+
+// 推送：把当前数据写入仓库文件（自动创建或覆盖）
+async function pushToRepo(){
+  const ms=Object.keys(S.months).sort();
+  if(!ms.length){toast('请先上传数据','error');return;}
+  const token=localStorage.getItem(SYNC_TOKEN_KEY);
+  if(!token){toast('请先设置 GitHub Token','error');return;}
+
+  setSyncStatus('正在推送...');
+  const apiBase=`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH}`;
+  const headers={'Authorization':'token '+token,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'};
+
+  // 先获取现有文件的 SHA（更新文件时需要）
+  let sha=null;
+  try{
+    const r=await fetch(apiBase,{headers});
+    if(r.ok){const d=await r.json();sha=d.sha;}
+  }catch(e){}
+
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(serializeMonths()))));
+  const now=new Date().toLocaleString('zh-CN');
+  const body={
+    message:`数据更新 ${now} · ${ms.map(m=>S.months[m].plat.label).join('、')}`,
+    content,
+    ...(sha?{sha}:{})
+  };
+
+  try{
+    const r=await fetch(apiBase,{method:'PUT',headers,body:JSON.stringify(body)});
+    if(!r.ok){const e=await r.json();throw new Error(e.message||r.status);}
+    setSyncStatus('✓ 推送成功！其他人刷新页面即可看到最新数据','var(--ok)');
+    toast('推送成功','success');
+  }catch(e){
+    setSyncStatus('✕ 推送失败：'+e.message,'var(--err)');
+    toast('推送失败：'+e.message,'error');
+  }
+}
+
+// 拉取：从仓库读取数据文件并加载
+async function pullFromRepo(showModal=false){
+  setSyncStatus('正在拉取...');
+  const apiBase=`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH}`;
+  // 用 raw 地址绕过 CORS 缓存，加时间戳避免浏览器缓存
+  const rawUrl=`https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${DATA_PATH}?t=${Date.now()}`;
+  try{
+    const r=await fetch(rawUrl);
+    if(r.status===404)throw new Error('仓库中暂无数据，请先推送');
+    if(!r.ok)throw new Error('拉取失败: '+r.status);
+    const payload=await r.json();
+    const yms=Object.keys(payload).sort();
+    if(!yms.length)throw new Error('数据为空');
+    yms.forEach(ym=>{S.months[ym]={plat:payload[ym].plat,guilds:payload[ym].guilds||[],fileName:'(云端)'}; });
+    S.ym=yms[yms.length-1];
+    const itemId='repo_sync';
+    S.items[itemId]={name:'云端数据（'+yms.map(m=>S.months[m].plat.label).join('、')+'）',status:'done',yms,rowCount:null,ext:'cache'};
+    saveToStorage();updateStorageBanner();rFL();
+    setSyncStatus('✓ 已加载 '+yms.length+' 个月份：'+yms.map(m=>S.months[m].plat.label).join('、'),'var(--ok)');
+    toast('已加载最新云端数据','success');
+    if(showModal)setTimeout(closeSyncModal,1200);
+  }catch(e){
+    setSyncStatus(''+e.message,'var(--mu)');
+    if(!showModal)console.info('auto pull:',e.message); // 静默失败（页面自动拉取时）
+  }
+}
+document.addEventListener('DOMContentLoaded',function(){
+  const ok=loadFromStorage();
+  if(ok){
+    const ms=Object.keys(S.months).sort();
+    rFL(); updateStorageBanner();
+    setTimeout(()=>{
+      const label=ms.map(m=>S.months[m].plat.label).join('、');
+      toast((S.items['embed_init']?'已加载内嵌数据：':'已从本地缓存恢复 '+ms.length+' 个月份：')+label,'info');
+    },300);
+  }
+  // 静默从仓库拉取最新数据（页面打开时自动同步）
+  pullFromRepo(false);
+});
+</script>
+</body>
+</html>
